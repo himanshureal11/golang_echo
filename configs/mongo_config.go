@@ -19,14 +19,14 @@ var (
 func InitMongoDB() {
 	mongoURL := os.Getenv("MONGODB_URL")
 	if mongoURL == "" {
-		log.Fatal("MONGODB_URL environment variable is not set.")
+		log.Println("MONGODB_URL environment variable is not set.")
 	}
 
 	clientOptions := options.Client().ApplyURI(mongoURL)
 
 	client, err := mongo.NewClient(clientOptions)
 	if err != nil {
-		log.Fatal("Error creating MongoDB client:", err)
+		log.Println("Error creating MongoDB client:", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -34,12 +34,12 @@ func InitMongoDB() {
 
 	err = client.Connect(ctx)
 	if err != nil {
-		log.Fatal("Error connecting to MongoDB:", err)
+		log.Println("Error connecting to MongoDB:", err)
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatal("Error pinging MongoDB:", err)
+		log.Println("Error pinging MongoDB:", err)
 	}
 
 	fmt.Println("Connected to MongoDB!")
