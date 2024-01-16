@@ -72,6 +72,10 @@ func InsertData(data PredictionTradeJoined, wg *sync.WaitGroup) error {
 	return nil
 }
 
-func InsertMany(data []interface{}) {
-	collections.TRADE_JOINED_COLLECTION.InsertMany(context.Background(), data)
+func InsertMany(data []interface{}) error {
+	_, err := collections.TRADE_JOINED_COLLECTION.InsertMany(context.Background(), data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
