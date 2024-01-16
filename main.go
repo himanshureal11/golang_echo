@@ -24,7 +24,6 @@ func init() {
 func main() {
 	// Create a new Echo instance
 	e := echo.New()
-
 	e.Use(requestLogger)
 	InitializeRoutes(e)
 	// Define routes
@@ -32,7 +31,7 @@ func main() {
 
 	// Start the server on port 8080
 	PORT := os.Getenv("PORT")
-	e.Start(PORT)
+	log.Fatal(e.Start(PORT))
 }
 
 // Handler for the "/" route

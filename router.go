@@ -9,6 +9,8 @@ import (
 // InitializeRoutes sets up all the routes for the application
 func InitializeRoutes(e *echo.Echo) {
 	e.POST("/cancel_all_unmatched_tarde", controllers.CancelAllUnMatchedTrade)
+	e.POST("/sale_trade", controllers.SaleTrade)
+	e.POST("/join_trade", controllers.JoinTrade)
 }
 
 // Handler for the "/" route

@@ -79,3 +79,19 @@ func IncrementBY(key string, value float64) error {
 	}
 	return nil
 }
+
+func HashIncrBy(key, field string, value float64) (float64, error) {
+	incrVal, err := client.HIncrByFloat(ctx, key, field, value).Result()
+	if err != nil {
+		return 0, err
+	}
+	return incrVal, nil
+}
+
+func Rpush(ctx context.Context, key, value string) error {
+	_, err := client.RPush(ctx, key, value).Result()
+	if err != nil {
+		return nil
+	}
+	return err
+}
