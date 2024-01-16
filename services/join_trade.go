@@ -3,19 +3,21 @@ package services
 import (
 	"go_echo/common"
 	"go_echo/models"
-	"sync"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var wg sync.WaitGroup
+// var wg sync.WaitGroup
 
 func JoinTrade(data []models.PredictionTradeJoined) (error, common.Response) {
+	var joinPredictionData []interface{}
 	for i := 0; i < 10000; i++ {
-		wg.Add(1)
 		data[0].ID = primitive.NewObjectID()
-		go models.InsertData(data[0], &wg)
+		data[0].SetTimestamps()
+		joinPredictionData = append(joinPredictionData, data[0])
+		// wg.Add(1)
 	}
-	wg.Wait()
+	models.InsertMany(joinPredictionData)
+	// wg.Wait()
 	return nil, common.Response{}
 }
