@@ -36,6 +36,18 @@ type CancelSaleRequestData struct {
 	UserID       string  `json:"user_id" validate:"required,hexadecimal,len=24"`
 }
 
+type SaleOnDifferentPrice struct {
+	RecordID     string  `json:"record_id" validate:"required,hexadecimal,len=24"`
+	SaleFee      float32 `json:"sale_fee" validate:"required,numeric,gte=0.5,lte=9.5"`
+	OldSaleFee   float32 `json:"old_sale_fee" validate:"required,numeric,gte=0.5,lte=9.5"`
+	PredictionID string  `json:"prediction_id" validate:"required,hexadecimal,len=24"`
+	MatchID      int     `json:"match_id" validate:"required"`
+	OptionID     int8    `json:"option_id" validate:"required,oneof=1 2"`
+	Sport        int8    `json:"sport" validate:"required"`
+	Slots        int     `json:"slots" validate:"required,numeric,gte=1"`
+	UserID       string  `json:"user_id" validate:"required,hexadecimal,len=24"`
+}
+
 func GetValidationErrors(err error) map[string]string {
 	errors := make(map[string]string)
 	// Check if it's a validation error

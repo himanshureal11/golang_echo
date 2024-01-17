@@ -21,7 +21,7 @@ func SaleTrade(c echo.Context) error {
 	}
 	err, response := services.SaleTrade(requestBody)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Bad Request"})
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -39,7 +39,7 @@ func CancelTrade(c echo.Context) error {
 	}
 	err, response := services.CancelSale(requestBody)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Bad Request"})
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
 	return c.JSON(http.StatusOK, response)

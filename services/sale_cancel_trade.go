@@ -17,13 +17,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var response common.Response = common.Response{
-	Status:  false,
-	Message: "No Prediction Found",
-	Data:    []string{},
-}
-
 func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
+	var response common.Response = common.Response{
+		Status:  false,
+		Message: "No Prediction Found",
+		Data:    []string{},
+	}
 	preKey := common.GetPredictionKey(common.TRADE_CONSTANT.MATCH_TRADE_PREDICTION, data.MatchID, data.Sport, data.PredictionID)
 	preKeyResult, err := configs.GetHashKeyValues(preKey)
 	if err != nil {
@@ -58,7 +57,11 @@ func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
 			if !found {
 				userTradeSaleData = append(userTradeSaleData, saleTradeByUser)
 			}
-			updateSaleSlots(data, userTradeSaleData, joinPredKey, joinSaleTradeKey)
+			err = updateSaleSlots(data, userTradeSaleData, joinPredKey, joinSaleTradeKey)
+			if err != nil {
+				response.Message = "You Are not Allowed to sale the slots for this trade"
+				return err, response
+			}
 			response.Status = true
 			response.Message = "Trade successfully put on sale"
 			return nil, response
@@ -70,44 +73,12 @@ func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
 	}
 }
 
-func pushKeyInTradeOnSale(key string, value string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	configs.Rpush(key, value)
-}
-
-func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTrade, joinedUserKey string, joinSaleTradeKey string) {
-	configs.HashIncrBy(joinedUserKey, "slots_on_sale", float64(data.SaleSlots))
-	keyName := helper.KeyName(float64(data.SaleFee))
-	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
-	pushInKeyData := fmt.Sprintf("%s-%s-%.1f", data.UserID, data.RecordID, data.SaleFee)
-	var keySync sync.WaitGroup
-	for i := 0; i < data.SaleSlots; i++ {
-		keySync.Add(1)
-		go pushKeyInTradeOnSale(key, pushInKeyData, &keySync)
-	}
-	keySync.Wait()
-	tradeOnSaleKey := fmt.Sprintf("%s%d:%s:%s:%s", common.TRADE_ON_SALE_USER_META, data.MatchID, data.PredictionID, data.RecordID, data.UserID)
-	tradeOnSalePushElement := fmt.Sprintf("%s-%s-%.1f-%d", data.UserID, data.RecordID, data.SaleFee, data.OptionID)
-	configs.Rpush(tradeOnSaleKey, tradeOnSalePushElement)
-	configs.SetWithExpirationDays(tradeOnSaleKey, 40)
-	configs.SetWithExpirationDays(key, 40)
-	RecordId, err := primitive.ObjectIDFromHex(data.RecordID)
-	if err != nil {
-		return
-	}
-	filter := bson.M{"_id": RecordId}
-	update := bson.M{
-		"$inc": bson.M{"slots_on_sale": data.SaleSlots},
-		"$set": bson.M{"sale_trade": saleSlotArray},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err = collections.TRADE_JOINED_COLLECTION.UpdateOne(context.TODO(), filter, update, opts)
-	jsonString, err := json.Marshal(saleSlotArray)
-	expiration := 30 * 24 * time.Hour
-	configs.SetStringValue(joinSaleTradeKey, string(jsonString), expiration)
-}
-
 func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
+	var response common.Response = common.Response{
+		Status:  false,
+		Message: "No Prediction Found",
+		Data:    []string{},
+	}
 	joinSaleTradeKey := fmt.Sprintf("%s%s", common.SLOTS_ON_SALE, data.RecordID)
 	joinPredKeyResult, err := configs.GetStringValue(joinSaleTradeKey)
 	if err != nil {
@@ -129,8 +100,138 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 			break
 		}
 	}
-	jsonString, err := json.Marshal(userTradeSaleData)
-	expiration := 30 * 24 * time.Hour
-	configs.SetStringValue(joinSaleTradeKey, string(jsonString), expiration)
+	// jsonString, err := json.Marshal(userTradeSaleData)
+	// expiration := 30 * 24 * time.Hour
+	// configs.SetStringValue(joinSaleTradeKey, string(jsonString), expiration)
+	err = saveSaleTradeDataInRedis(joinSaleTradeKey, userTradeSaleData)
+	if err != nil {
+		response.Message = "You Are Not Able To Cancel The Sale"
+		return err, response
+	}
+	err = updateDbForSale(userTradeSaleData, data.RecordID, -data.CancelSlots)
+	if err != nil {
+		response.Message = "You Are Not Able To Cancel The Sale"
+		return err, response
+	}
 	return nil, response
+}
+
+func SaleOnDifferentPrice(data common.SaleOnDifferentPrice) (error, common.Response) {
+	var response common.Response = common.Response{
+		Status:  false,
+		Message: "No Prediction Found",
+		Data:    []string{},
+	}
+	var cancelSaleBody = common.CancelSaleRequestData{
+		RecordID:     data.RecordID,
+		SaleFee:      data.OldSaleFee,
+		PredictionID: data.PredictionID,
+		MatchID:      data.MatchID,
+		OptionID:     data.OptionID,
+		Sport:        data.Sport,
+		CancelSlots:  data.Slots,
+		UserID:       data.UserID,
+	}
+	err, _ := CancelSale(cancelSaleBody)
+	if err != nil {
+		response.Message = "You Are not able to cancel sale trade"
+		return nil, response
+	}
+	var puttingSaleSlot = common.RequestSaleBody{
+		RecordID:     data.RecordID,
+		SaleFee:      data.SaleFee,
+		PredictionID: data.PredictionID,
+		MatchID:      data.MatchID,
+		OptionID:     data.OptionID,
+		Sport:        data.Sport,
+		UserID:       data.UserID,
+		SaleSlots:    data.Slots,
+	}
+	fmt.Println(cancelSaleBody, puttingSaleSlot)
+	return nil, response
+}
+
+// update in db
+
+func updateDbForSale(saleSlotArray []models.SaleTrade, RecordID string, saleSlots int) error {
+	RecordId, err := primitive.ObjectIDFromHex(RecordID)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{"_id": RecordId}
+	update := bson.M{
+		"$inc": bson.M{"slots_on_sale": saleSlots},
+		"$set": bson.M{"sale_trade": saleSlotArray},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err = collections.TRADE_JOINED_COLLECTION.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// update in redis
+
+func saveSaleTradeDataInRedis(key string, saleTrade []models.SaleTrade) error {
+	jsonString, err := json.Marshal(saleTrade)
+	if err != nil {
+		return err
+	}
+	expiration := 30 * 24 * time.Hour
+	err = configs.SetStringValue(key, string(jsonString), expiration)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// pushing key in redis list for sell
+
+func pushKeyInTradeOnSale(key string, value string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	configs.Rpush(key, value)
+}
+
+// updating data for sale slots
+
+func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTrade, joinedUserKey string, joinSaleTradeKey string) error {
+	configs.HashIncrBy(joinedUserKey, "slots_on_sale", float64(data.SaleSlots))
+	keyName := helper.KeyName(float64(data.SaleFee))
+	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
+	pushInKeyData := fmt.Sprintf("%s-%s-%.1f", data.UserID, data.RecordID, data.SaleFee)
+	var keySync sync.WaitGroup
+	for i := 0; i < data.SaleSlots; i++ {
+		keySync.Add(1)
+		go pushKeyInTradeOnSale(key, pushInKeyData, &keySync)
+	}
+	keySync.Wait()
+	tradeOnSaleKey := fmt.Sprintf("%s%d:%s:%s:%s", common.TRADE_ON_SALE_USER_META, data.MatchID, data.PredictionID, data.RecordID, data.UserID)
+	tradeOnSalePushElement := fmt.Sprintf("%s-%s-%.1f-%d", data.UserID, data.RecordID, data.SaleFee, data.OptionID)
+	configs.Rpush(tradeOnSaleKey, tradeOnSalePushElement)
+	configs.SetWithExpirationDays(tradeOnSaleKey, 40)
+	configs.SetWithExpirationDays(key, 40)
+	// RecordId, err := primitive.ObjectIDFromHex(data.RecordID)
+	// if err != nil {
+	// 	return
+	// }
+	// filter := bson.M{"_id": RecordId}
+	// update := bson.M{
+	// 	"$inc": bson.M{"slots_on_sale": data.SaleSlots},
+	// 	"$set": bson.M{"sale_trade": saleSlotArray},
+	// }
+	// opts := options.Update().SetUpsert(true)
+	// _, err = collections.TRADE_JOINED_COLLECTION.UpdateOne(context.TODO(), filter, update, opts)
+	err := updateDbForSale(saleSlotArray, data.RecordID, data.SaleSlots)
+	if err != nil {
+		return err
+	}
+	err = saveSaleTradeDataInRedis(joinSaleTradeKey, saleSlotArray)
+	if err != nil {
+		return err
+	}
+	return nil
+	// jsonString, err := json.Marshal(saleSlotArray)
+	// expiration := 30 * 24 * time.Hour
+	// configs.SetStringValue(joinSaleTradeKey, string(jsonString), expiration)
 }
