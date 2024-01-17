@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"go_echo/models"
 	"go_echo/services"
 	"log"
@@ -13,6 +14,7 @@ func JoinTrade(c echo.Context) error {
 	// var validate = validator.New()
 	var requestBody []models.PredictionTradeJoined
 	if err := c.Bind(&requestBody); err != nil {
+		fmt.Println(">>>>", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Bad Request"})
 	}
 	// for _, v := range requestBody {
