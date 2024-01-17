@@ -10,6 +10,7 @@ import (
 func InitializeRoutes(e *echo.Echo) {
 	e.POST("/cancel_all_unmatched_tarde", controllers.CancelAllUnMatchedTrade)
 	e.POST("/sale_trade", controllers.SaleTrade)
+	e.POST("/cancel_trade", controllers.CancelTrade)
 	e.POST("/join_trade", controllers.JoinTrade)
 }
 

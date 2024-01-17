@@ -15,14 +15,25 @@ type CancelAllUnMatchedBody struct {
 }
 
 type RequestSaleBody struct {
-	RecordID     string `json:"record_id" validate:"required,hex,len=24"`
-	SaleFee      string `json:"sale_fee" validate:"required,numeric,gte=0.5,lte=9.5"`
-	PredictionID string `json:"prediction_id" validate:"required,hex,len=24"`
-	MatchID      string `json:"match_id" validate:"required"`
-	OptionID     string `json:"option_id" validate:"required,oneof=1 2"`
-	Sport        string `json:"sport" validate:"required"`
-	SaleSlots    string `json:"sale_slots" validate:"required,numeric,gte=1"`
-	UserID       string `json:"user_id" validate:"required,hex,len=24"`
+	RecordID     string  `json:"record_id" validate:"required,hexadecimal,len=24"`
+	SaleFee      float32 `json:"sale_fee" validate:"required,numeric,gte=0.5,lte=9.5"`
+	PredictionID string  `json:"prediction_id" validate:"required,hexadecimal,len=24"`
+	MatchID      int     `json:"match_id" validate:"required"`
+	OptionID     int8    `json:"option_id" validate:"required,oneof=1 2"`
+	Sport        int8    `json:"sport" validate:"required"`
+	SaleSlots    int     `json:"sale_slots" validate:"required,numeric,gte=1"`
+	UserID       string  `json:"user_id" validate:"required,hexadecimal,len=24"`
+}
+
+type CancelSaleRequestData struct {
+	RecordID     string  `json:"record_id" validate:"required,hexadecimal,len=24"`
+	SaleFee      float32 `json:"sale_fee" validate:"required,numeric,gte=0.5,lte=9.5"`
+	PredictionID string  `json:"prediction_id" validate:"required,hexadecimal,len=24"`
+	MatchID      int     `json:"match_id" validate:"required"`
+	OptionID     int8    `json:"option_id" validate:"required,oneof=1 2"`
+	Sport        int8    `json:"sport" validate:"required"`
+	CancelSlots  int     `json:"cancel_slots" validate:"required,numeric,gte=1"`
+	UserID       string  `json:"user_id" validate:"required,hexadecimal,len=24"`
 }
 
 func GetValidationErrors(err error) map[string]string {

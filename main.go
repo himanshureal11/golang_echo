@@ -58,7 +58,7 @@ func requestLogger(next echo.HandlerFunc) echo.HandlerFunc {
 		responseTime := end.Sub(start)
 
 		// Log the request information
-		log.Printf("[%s] %s - %s - %v", c.Request().Method, c.Path(), c.Response().Status, responseTime)
+		log.Printf("[%s] %s - %d - %v", c.Request().Method, c.Path(), c.Response().Status, responseTime)
 
 		return err
 	}

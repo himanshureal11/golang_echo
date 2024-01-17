@@ -26,3 +26,21 @@ func SaleTrade(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response)
 }
+
+func CancelTrade(c echo.Context) error {
+	var validate = validator.New()
+	var requestBody common.CancelSaleRequestData
+	if err := c.Bind(&requestBody); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Bad Request"})
+	}
+	if err := validate.Struct(requestBody); err != nil {
+		validationErrors := common.GetValidationErrors(err)
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"error": "Validation Error", "details": validationErrors})
+	}
+	err, response := services.CancelSale(requestBody)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Bad Request"})
+	}
+
+	return c.JSON(http.StatusOK, response)
+}

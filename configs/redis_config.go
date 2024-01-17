@@ -44,9 +44,7 @@ func init() {
 	fmt.Println("Connected to Redis:", pong)
 }
 
-func SetStringValue(key, value string, expiration time.Duration) error {
-	return client.Set(ctx, key, value, expiration).Err()
-}
+// hash function
 
 func GetHashKeyValues(key string) (map[string]string, error) {
 	result, err := client.HGetAll(ctx, key).Result()
@@ -54,14 +52,6 @@ func GetHashKeyValues(key string) (map[string]string, error) {
 		return nil, err
 	}
 	return result, nil
-}
-
-func RemoveListElement(key string, count int64, valueToRemove string) (int64, error) {
-	removedCount, err := client.LRem(ctx, key, count, valueToRemove).Result()
-	if err != nil {
-		return 0, err
-	}
-	return removedCount, nil
 }
 
 func Hmset(key string, fields map[string]interface{}) error {
@@ -72,6 +62,38 @@ func Hmset(key string, fields map[string]interface{}) error {
 	return nil
 }
 
+func HashIncrBy(key string, field string, value float64) (float64, error) {
+	incrVal, err := client.HIncrByFloat(ctx, key, field, value).Result()
+	if err != nil {
+		return 0, err
+	}
+	return incrVal, nil
+}
+
+func HashGetByKeyField(key, field string) {
+	client.HGet(ctx, key, field)
+}
+
+// list functions
+
+func Rpush(key string, value string) error {
+	_, err := client.RPush(ctx, key, value).Result()
+	if err != nil {
+		return nil
+	}
+	return err
+}
+
+func RemoveListElement(key string, count int64, valueToRemove string) (int64, error) {
+	removedCount, err := client.LRem(ctx, key, count, valueToRemove).Result()
+	if err != nil {
+		return 0, err
+	}
+	return removedCount, nil
+}
+
+// string functions
+
 func IncrementBY(key string, value float64) error {
 	err := client.IncrByFloat(ctx, key, value)
 	if err != nil {
@@ -80,18 +102,27 @@ func IncrementBY(key string, value float64) error {
 	return nil
 }
 
-func HashIncrBy(key, field string, value float64) (float64, error) {
-	incrVal, err := client.HIncrByFloat(ctx, key, field, value).Result()
-	if err != nil {
-		return 0, err
-	}
-	return incrVal, nil
+func SetStringValue(key, value string, expiration time.Duration) error {
+	return client.Set(ctx, key, value, expiration).Err()
 }
 
-func Rpush(ctx context.Context, key, value string) error {
-	_, err := client.RPush(ctx, key, value).Result()
+func GetStringValue(key string) (string, error) {
+	data, err := client.Get(ctx, key).Result()
+	fmt.Println(">>>", data)
 	if err != nil {
-		return nil
+		return "", err
 	}
-	return err
+	return data, nil
+}
+
+// expiry function
+
+func SetWithExpirationDays(key string, expirationDays int) error {
+	expirationDuration := time.Duration(expirationDays) * 24 * time.Hour
+	_, err := client.Expire(ctx, key, expirationDuration).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

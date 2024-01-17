@@ -23,3 +23,7 @@ type Response struct {
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 }
+
+var SLOTS_ON_SALE string = "slots_on_sale:" // match_id:pred_id:record_id
+var TRADE_ON_SALE string = "trade-on-sale:"
+var TRADE_ON_SALE_USER_META string = "trade-on-sale-user-meta:"
