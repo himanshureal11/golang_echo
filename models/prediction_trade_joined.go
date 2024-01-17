@@ -10,6 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type SaleTrade struct {
+	SaleSlots int     `bson:"sale_slot" json:"sale_slot"`
+	SoldSlots int     `bson:"sold_slot" json:"sold_slot"`
+	SaleFee   float32 `bson:"sale_fee" json:"sale_fee"`
+}
+
 type PredictionTradeJoined struct {
 	ID                      primitive.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	PredictionID            primitive.ObjectID `bson:"prediction_id,omitempty" json:"prediction_id,omitempty"`
@@ -20,7 +26,7 @@ type PredictionTradeJoined struct {
 	SeriesID                int                `bson:"series_id" json:"series_id" validate:"omitempty"`
 	Sport                   int                `bson:"sport" json:"sport" validate:"omitempty"`
 	OptionID                int                `bson:"option_id" json:"option_id" validate:"omitempty"`
-	SlotFee                 int                `bson:"slot_fee" json:"slot_fee"`
+	SlotFee                 float64            `bson:"slot_fee" json:"slot_fee"`
 	TotalMatched            int                `bson:"total_matched" json:"total_matched" default:"0"`
 	TotalSlot               int                `bson:"total_slot" json:"total_slot" validate:"omitempty"`
 	TotalCash               int                `bson:"total_cash" json:"total_cash"`
@@ -49,6 +55,7 @@ type PredictionTradeJoined struct {
 	ExtraSlotMatchedAmount  int                `bson:"extra_slot_matched_amount" json:"extra_slot_matched_amount" validate:"omitempty"`
 	CreatedAt               time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt               time.Time          `bson:"updated_at" json:"updated_at"`
+	SaleTrade               []SaleTrade        `bson:"sale_trade" json:"sale_trade"`
 }
 
 // Add any additional methods or validations as needed
