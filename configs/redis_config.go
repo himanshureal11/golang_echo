@@ -108,7 +108,6 @@ func SetStringValue(key, value string, expiration time.Duration) error {
 
 func GetStringValue(key string) (string, error) {
 	data, err := client.Get(ctx, key).Result()
-	fmt.Println(">>>", data)
 	if err != nil {
 		return "", err
 	}

@@ -47,6 +47,7 @@ func requestLogger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Record the start time of the request
 		start := time.Now()
+		log.Printf("Option[%s] %s - %d", c.Request().Method, c.Path(), c.Response().Status)
 
 		// Call the next middleware or handler
 		err := next(c)
