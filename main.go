@@ -10,18 +10,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type User struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
 func main() {
 	// Create a new Echo instance
 	e := echo.New()
 	e.Use(requestLogger)
 	InitializeRoutes(e)
-	// Define routes
-	// e.GET("/", helloHandler)
+
 	// Start the server on port 8080
 	PORT := common.PORT
 	e.Logger.Fatal(e.Start(PORT))
