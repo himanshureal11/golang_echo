@@ -25,6 +25,7 @@ func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
 	}
 	preKey := common.GetPredictionKey(common.TRADE_CONSTANT.MATCH_TRADE_PREDICTION, data.MatchID, data.Sport, data.PredictionID)
 	preKeyResult, err := configs.GetHashKeyValues(preKey)
+
 	if err != nil {
 		return err, response
 	}
@@ -113,6 +114,8 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 		response.Message = "You Are Not Able To Cancel The Sale"
 		return err, response
 	}
+	response.Message = "Sale Cancel Successfully"
+	response.Status = true
 	return nil, response
 }
 
