@@ -1,5 +1,10 @@
 package helper
 
+import (
+	"log"
+	"runtime"
+)
+
 func KeyName(key float64) string {
 	var keyName string
 
@@ -47,4 +52,13 @@ func KeyName(key float64) string {
 	}
 
 	return keyName
+}
+
+func LogErrorWithStackTrace(err error) error {
+	log.Println("Error:", err)
+	// Capture the stack trace
+	stack := make([]byte, 1024)
+	runtime.Stack(stack, false)
+	log.Println(string(stack))
+	return err
 }
