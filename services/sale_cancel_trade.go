@@ -101,9 +101,6 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 			break
 		}
 	}
-	// jsonString, err := json.Marshal(userTradeSaleData)
-	// expiration := 30 * 24 * time.Hour
-	// configs.SetStringValue(joinSaleTradeKey, string(jsonString), expiration)
 	err = saveSaleTradeDataInRedis(joinSaleTradeKey, userTradeSaleData)
 	if err != nil {
 		response.Message = "You Are Not Able To Cancel The Sale"
@@ -214,17 +211,6 @@ func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTra
 	configs.Rpush(tradeOnSaleKey, tradeOnSalePushElement)
 	configs.SetWithExpirationDays(tradeOnSaleKey, 40)
 	configs.SetWithExpirationDays(key, 40)
-	// RecordId, err := primitive.ObjectIDFromHex(data.RecordID)
-	// if err != nil {
-	// 	return
-	// }
-	// filter := bson.M{"_id": RecordId}
-	// update := bson.M{
-	// 	"$inc": bson.M{"slots_on_sale": data.SaleSlots},
-	// 	"$set": bson.M{"sale_trade": saleSlotArray},
-	// }
-	// opts := options.Update().SetUpsert(true)
-	// _, err = collections.TRADE_JOINED_COLLECTION.UpdateOne(context.TODO(), filter, update, opts)
 	err := updateDbForSale(saleSlotArray, data.RecordID, data.SaleSlots)
 	if err != nil {
 		return err
@@ -234,7 +220,4 @@ func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTra
 		return err
 	}
 	return nil
-	// jsonString, err := json.Marshal(saleSlotArray)
-	// expiration := 30 * 24 * time.Hour
-	// configs.SetStringValue(joinSaleTradeKey, string(jsonString), expiration)
 }
