@@ -3,8 +3,10 @@ package common
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type CancelAllUnMatchedBody struct {
@@ -46,6 +48,20 @@ type SaleOnDifferentPrice struct {
 	Sport        int8    `json:"sport" validate:"required"`
 	Slots        int     `json:"slots" validate:"required,numeric,gte=1"`
 	UserID       string  `json:"user_id" validate:"required,hexadecimal,len=24"`
+}
+
+type TradeTransaction struct {
+	MatchId        int                `bson:"match_id" json:"match_id"`
+	SportType      int                `bson:"sport_type" json:"sport_type"`
+	PredictionType string             `bson:"prediction_type" json:"prediction_type"`
+	CashBalance    float64            `bson:"cash_balance" json:"cash_balance"`
+	WinningBalance float64            `bson:"winning_balance" json:"winning_balance"`
+	DebitedAmount  float64            `bson:"debited_amount" json:"debited_amount"`
+	CreditedAmount float64            `bson:"credited_amount" json:"credited_amount"`
+	PredictionID   primitive.ObjectID `bson:"prediction_id" json:"prediction_id"`
+	UserId         primitive.ObjectID `bson:"user_id" json:"user_id"`
+	CreatedAt      time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt      time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 func GetValidationErrors(err error) map[string]string {

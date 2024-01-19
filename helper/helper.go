@@ -1,8 +1,16 @@
 package helper
 
 import (
+	"context"
+	"go_echo/collections"
+	"go_echo/common"
 	"log"
 	"runtime"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func KeyName(key float64) string {
@@ -61,4 +69,45 @@ func LogErrorWithStackTrace(err error) error {
 	runtime.Stack(stack, false)
 	log.Println(string(stack))
 	return err
+}
+
+type User struct {
+	ID             primitive.ObjectID `bson:"_id"`
+	CashBalance    float64            `bson:"cash_balance"`
+	WinningBalance float64            `bson:"winning_balance"`
+}
+
+// CreateTradeTransaction creates a trade transaction
+func CreateTradeTransaction(id primitive.ObjectID, data common.TradeTransaction, when string) {
+	var user User
+
+	// Fetch user data
+	filter := bson.D{{Key: "_id", Value: id}}
+	projection := bson.D{
+		{Key: "_id", Value: 1},
+		{Key: "cash_balance", Value: 1},
+		{Key: "winning_balance", Value: 1},
+	}
+
+	err := collections.USERS.FindOne(context.TODO(), filter, options.FindOne().SetProjection(projection)).Decode(&user)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Adjust data based on "when"
+	if when == "after" {
+		data.CreditedAmount = 0
+	}
+
+	// Set data values
+	data.CashBalance = user.CashBalance
+	data.WinningBalance = user.WinningBalance
+	data.CreatedAt = time.Now()
+	data.UpdatedAt = time.Now()
+
+	// Insert trade transaction
+	_, err = collections.PREDICTION_TRANSACTION.InsertOne(context.TODO(), data)
+	if err != nil {
+		log.Panic(err)
+	}
 }

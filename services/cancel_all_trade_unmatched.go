@@ -62,28 +62,48 @@ func CancelAllUnMatchedTrade(data common.CancelAllUnMatchedBody) (error, common.
 	if err := cursor.All(context.TODO(), &trades); err != nil {
 		log.Panic(err)
 	}
+	if len(trades) == 0 {
+		response := common.Response{
+			Status:  false,
+			Message: "No Slots For Cancel",
+			Data:    []string{},
+		}
+		return nil, response
+	}
 	var updateUsersCh = make(chan mongo.WriteModel, len(trades))
 	var updateTradeJoinedCh = make(chan mongo.WriteModel, len(trades))
+	var userRefund = make(chan common.TradeTransaction, len(trades))
 	var wg sync.WaitGroup
 	for _, element := range trades {
 		wg.Add(1)
-		go cancelAllSlotsForTheSinglePrediction(element, &wg, updateUsersCh, updateTradeJoinedCh)
+		go cancelAllSlotsForTheSinglePrediction(element, &wg, updateUsersCh, updateTradeJoinedCh, userRefund)
 	}
 	go func() {
 		wg.Wait()
 		close(updateTradeJoinedCh)
 		close(updateUsersCh)
+		close(userRefund)
 	}()
 	if err := cursor.Err(); err != nil {
 		log.Panic(err)
 	}
 	var updateUsers []mongo.WriteModel
 	var updateTradeJoined []mongo.WriteModel
-
+	var tradeTransaction common.TradeTransaction
 	for u := range updateUsersCh {
 		updateUsers = append(updateUsers, u)
 	}
+	for r := range userRefund {
+		tradeTransaction.CreditedAmount += r.CreditedAmount
+		tradeTransaction.PredictionID = r.PredictionID
+		tradeTransaction.UserId = r.UserId
+		tradeTransaction.DebitedAmount += r.DebitedAmount
+		tradeTransaction.SportType = r.SportType
+		tradeTransaction.MatchId = r.MatchId
+		tradeTransaction.PredictionType = r.PredictionType
+	}
 
+	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction, "before")
 	for t := range updateTradeJoinedCh {
 		updateTradeJoined = append(updateTradeJoined, t)
 	}
@@ -101,6 +121,7 @@ func CancelAllUnMatchedTrade(data common.CancelAllUnMatchedBody) (error, common.
 			return err, common.Response{}
 		}
 	}
+	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction, "after")
 	response := common.Response{
 		Status:  true,
 		Message: "All unmatched slots are successfully cancelled",
@@ -109,7 +130,7 @@ func CancelAllUnMatchedTrade(data common.CancelAllUnMatchedBody) (error, common.
 	return nil, response
 }
 
-func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitGroup, updateUsersCh chan<- mongo.WriteModel, updateTradeJoinedCh chan<- mongo.WriteModel) {
+func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitGroup, updateUsersCh chan<- mongo.WriteModel, updateTradeJoinedCh chan<- mongo.WriteModel, userRefund chan<- common.TradeTransaction) {
 	defer wg.Done()
 	var recordKey = fmt.Sprintf("%s%d:%d:%s:%s:%s", common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID.Hex(), data.UserID.Hex(), data.ID.Hex())
 	recordKeyData, err := configs.GetHashKeyValues(recordKey)
@@ -171,6 +192,7 @@ func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitG
 						{Key: "$set", Value: fields},
 					})
 					updateTradeJoinedModel.SetUpsert(false)
+					// into channel
 					updateTradeJoinedCh <- updateTradeJoinedModel
 					updateUserModel := mongo.NewUpdateOneModel()
 					updateUserModel.SetFilter(bson.M{"_id": data.UserID})
@@ -180,7 +202,19 @@ func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitG
 							{Key: "winning_balance", Value: refundWin},
 						}},
 					})
+					userRefund <- common.TradeTransaction{
+						UserId:         data.UserID,
+						CreditedAmount: refundCash + refundWin,
+						DebitedAmount:  0,
+						CashBalance:    0,
+						WinningBalance: 0,
+						PredictionType: "tarde",
+						MatchId:        data.MatchID,
+						SportType:      data.Sport,
+						PredictionID:   data.PredictionID,
+					}
 					updateUserModel.SetUpsert(false)
+					// into channel
 					updateUsersCh <- updateUserModel
 					// updates := bson.D{
 					// 	{Key: "$inc", Value: bson.D{
