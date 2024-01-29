@@ -25,12 +25,12 @@ var (
 func init() {
 	redisURL := common.REDIS_URL
 	if redisURL == "" {
-		log.Fatal("REDIS_URL environment variable is not set.")
+		log.Panic("REDIS_URL environment variable is not set.")
 	}
 
 	options, err := redis.ParseURL(redisURL)
 	if err != nil {
-		log.Fatal("Error parsing Redis URL:", err)
+		log.Panic("Error parsing Redis URL:", err)
 	}
 
 	client = redis.NewClient(options)
@@ -38,7 +38,7 @@ func init() {
 	// Check if the Redis connection is successful
 	pong, err := client.Ping(ctx).Result()
 	if err != nil {
-		log.Fatal("Error connecting to Redis:", err)
+		log.Panic("Error connecting to Redis:", err)
 	}
 	fmt.Println("Connected to Redis:", pong)
 }
