@@ -205,6 +205,7 @@ func pushKeyInTradeOnSale(key string, value string, wg *sync.WaitGroup) {
 
 func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTrade, joinedUserKey string, joinSaleTradeKey string) error {
 	configs.HashIncrBy(joinedUserKey, "slots_on_sale", float64(data.SaleSlots))
+	configs.Hmset(joinedUserKey, map[string]interface{}{"on_sale": "true"})
 	keyName := helper.KeyName(float64(data.SaleFee))
 	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
 	pushInKeyData := fmt.Sprintf("%s-%s-%.1f", data.UserID, data.RecordID, data.SaleFee)
