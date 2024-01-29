@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go_echo/collections"
 	"go_echo/common"
@@ -95,9 +96,16 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
 	removeInKeyData := fmt.Sprintf("%s-%s-%.1f", data.UserID, data.RecordID, data.SaleFee)
 	configs.RemoveListElement(key, int64(data.CancelSlots), removeInKeyData)
+
 	for i, v := range userTradeSaleData {
 		if v.SaleFee == data.SaleFee {
-			userTradeSaleData[i].SaleSlots = 0
+			if userTradeSaleData[i].SaleSlots == 0 {
+				response.Message = "Your All slots are sold"
+				return errors.New("All Slots Are Matched"), response
+			} else {
+				data.CancelSlots = userTradeSaleData[i].SaleSlots
+				userTradeSaleData[i].SaleSlots = 0
+			}
 			break
 		}
 	}
