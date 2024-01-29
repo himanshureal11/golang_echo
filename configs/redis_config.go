@@ -3,20 +3,19 @@ package configs
 import (
 	"context"
 	"fmt"
+	"go_echo/common"
 	"log"
-	"os"
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/joho/godotenv"
 )
 
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
+// func init() {
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		log.Fatal("Error loading .env file")
+// 	}
+// }
 
 var (
 	ctx    = context.Background()
@@ -24,7 +23,7 @@ var (
 )
 
 func init() {
-	redisURL := os.Getenv("REDIS_URL")
+	redisURL := common.REDIS_URL
 	if redisURL == "" {
 		log.Fatal("REDIS_URL environment variable is not set.")
 	}

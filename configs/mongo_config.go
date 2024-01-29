@@ -3,8 +3,8 @@ package configs
 import (
 	"context"
 	"fmt"
+	"go_echo/common"
 	"log"
-	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,7 +17,7 @@ var (
 
 // InitMongoDB initializes the MongoDB connection.
 func InitMongoDB() {
-	mongoURL := os.Getenv("MONGODB_URL")
+	mongoURL := common.MONGO_URL
 	if mongoURL == "" {
 		log.Println("MONGODB_URL environment variable is not set.")
 	}
