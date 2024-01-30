@@ -81,14 +81,15 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 		Message: "No Prediction Found",
 		Data:    []string{},
 	}
+	joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
 	joinSaleTradeKey := fmt.Sprintf("%s%s", common.SLOTS_ON_SALE, data.RecordID)
-	joinPredKeyResult, err := configs.GetStringValue(joinSaleTradeKey)
+	joinSaleTradeKeyResult, err := configs.GetStringValue(joinSaleTradeKey)
 	if err != nil {
 		response.Message = "Invalid key"
 		return err, response
 	}
 	var userTradeSaleData []models.SaleTrade
-	if err := json.Unmarshal([]byte(joinPredKeyResult), &userTradeSaleData); err != nil {
+	if err := json.Unmarshal([]byte(joinSaleTradeKeyResult), &userTradeSaleData); err != nil {
 		response.Message = "Invalid Data"
 		return err, response
 	}
@@ -105,6 +106,7 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 			} else {
 				data.CancelSlots = userTradeSaleData[i].SaleSlots
 				userTradeSaleData[i].SaleSlots = 0
+				configs.HashIncrBy(joinPredKey, "slots_on_sale", -float64(data.CancelSlots))
 			}
 			break
 		}
