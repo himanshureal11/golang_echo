@@ -207,10 +207,14 @@ func pushKeyInTradeOnSale(key string, value string, wg *sync.WaitGroup) {
 
 func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTrade, joinedUserKey string, joinSaleTradeKey string) error {
 	configs.HashIncrBy(joinedUserKey, "slots_on_sale", float64(data.SaleSlots))
+	res, err := configs.HashGetByKeyField(joinedUserKey, "slot_fee")
+	if err != nil {
+		return err
+	}
 	configs.Hmset(joinedUserKey, map[string]interface{}{"on_sale": "true"})
 	keyName := helper.KeyName(float64(data.SaleFee))
 	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
-	pushInKeyData := fmt.Sprintf("%s-%s-%.1f", data.UserID, data.RecordID, data.SaleFee)
+	pushInKeyData := fmt.Sprintf("%s-%s-%.1f-%s", data.UserID, data.RecordID, data.SaleFee, res)
 	var keySync sync.WaitGroup
 	for i := 0; i < data.SaleSlots; i++ {
 		keySync.Add(1)
@@ -222,7 +226,7 @@ func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTra
 	configs.Rpush(tradeOnSaleKey, tradeOnSalePushElement)
 	configs.SetWithExpirationDays(tradeOnSaleKey, 40)
 	configs.SetWithExpirationDays(key, 40)
-	err := updateDbForSale(saleSlotArray, data.RecordID, data.SaleSlots)
+	err = updateDbForSale(saleSlotArray, data.RecordID, data.SaleSlots)
 	if err != nil {
 		return err
 	}

@@ -69,8 +69,12 @@ func HashIncrBy(key string, field string, value float64) (float64, error) {
 	return incrVal, nil
 }
 
-func HashGetByKeyField(key, field string) {
-	client.HGet(ctx, key, field)
+func HashGetByKeyField(key, field string) (string, error) {
+	res, err := client.HGet(ctx, key, field).Result()
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }
 
 // list functions
