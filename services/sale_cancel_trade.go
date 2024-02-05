@@ -32,6 +32,7 @@ func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
 	}
 	if len(preKeyResult) > 0 {
 		if _, ok := preKeyResult["_id"]; ok {
+			putOnSaleKey := fmt.Sprintf("%s%d:%s:%s:%d:%.1f", common.TRADE_CONSTANT.PREDICTION_TRADE_PREDEFINED_RATE, data.MatchID, data.PredictionID, data.RecordID, data.OptionID, data.SaleFee)
 			joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
 			joinSaleTradeKey := fmt.Sprintf("%s%s", common.SLOTS_ON_SALE, data.RecordID)
 			joinPredKeyResult, err := configs.GetStringValue(joinSaleTradeKey)
@@ -59,7 +60,7 @@ func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
 			if !found {
 				userTradeSaleData = append(userTradeSaleData, saleTradeByUser)
 			}
-			err = updateSaleSlots(data, userTradeSaleData, joinPredKey, joinSaleTradeKey)
+			err = updateSaleSlots(data, userTradeSaleData, joinPredKey, joinSaleTradeKey, putOnSaleKey)
 			if err != nil {
 				response.Message = "You Are not Allowed to sale the slots for this trade"
 				return err, response
@@ -209,13 +210,14 @@ func pushKeyInTradeOnSale(key string, value string, wg *sync.WaitGroup) {
 
 // updating data for sale slots
 
-func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTrade, joinedUserKey string, joinSaleTradeKey string) error {
+func updateSaleSlots(data common.RequestSaleBody, saleSlotArray []models.SaleTrade, joinedUserKey string, joinSaleTradeKey string, putOnSaleKey string) error {
 	configs.HashIncrBy(joinedUserKey, "slots_on_sale", float64(data.SaleSlots))
 	res, err := configs.HashGetByKeyField(joinedUserKey, "slot_fee")
 	if err != nil {
 		return err
 	}
 	configs.Hmset(joinedUserKey, map[string]interface{}{"on_sale": "true"})
+	configs.Hmset(putOnSaleKey, map[string]interface{}{"is_put_on_sale": "1"})
 	keyName := helper.KeyName(float64(data.SaleFee))
 	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
 	pushInKeyData := fmt.Sprintf("%s-%s-%.1f-%s", data.UserID, data.RecordID, data.SaleFee, res)
