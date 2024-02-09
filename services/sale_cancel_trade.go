@@ -83,8 +83,12 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 		Data:    []string{},
 	}
 	joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
-	res, err := configs.HashGetByKeyField(joinPredKey, "slot_fee")
+	res, err := configs.GetHashKeyValues(joinPredKey)
 	if err != nil {
+		return err, response
+	}
+	if res["is_pred_cancel"] == "1" || res["win_distribute"] == "true" {
+		response.Message = "Prediction is already over"
 		return err, response
 	}
 	joinSaleTradeKey := fmt.Sprintf("%s%s", common.SLOTS_ON_SALE, data.RecordID)
@@ -100,7 +104,7 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 	}
 	keyName := helper.KeyName(float64(data.SaleFee))
 	key := fmt.Sprintf("%s%d:%s:%d:%s", common.TRADE_ON_SALE, data.MatchID, data.PredictionID, data.OptionID, keyName)
-	removeInKeyData := fmt.Sprintf("%s-%s-%.1f-%s", data.UserID, data.RecordID, data.SaleFee, res)
+	removeInKeyData := fmt.Sprintf("%s-%s-%.1f-%s", data.UserID, data.RecordID, data.SaleFee, res["slot_fee"])
 	configs.RemoveListElement(key, int64(data.CancelSlots), removeInKeyData)
 
 	for i, v := range userTradeSaleData {
