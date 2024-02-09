@@ -78,7 +78,7 @@ type User struct {
 }
 
 // CreateTradeTransaction creates a trade transaction
-func CreateTradeTransaction(id primitive.ObjectID, data common.TradeTransaction, when string) {
+func CreateTradeTransaction(id primitive.ObjectID, data common.TradeTransaction) {
 	var user User
 
 	// Fetch user data
@@ -95,9 +95,6 @@ func CreateTradeTransaction(id primitive.ObjectID, data common.TradeTransaction,
 	}
 
 	// Adjust data based on "when"
-	if when == "after" {
-		data.CreditedAmount = 0
-	}
 
 	// Set data values
 	data.CashBalance = user.CashBalance

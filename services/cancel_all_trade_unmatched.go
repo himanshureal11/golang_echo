@@ -94,16 +94,16 @@ func CancelAllUnMatchedTrade(data common.CancelAllUnMatchedBody) (error, common.
 		updateUsers = append(updateUsers, u)
 	}
 	for r := range userRefund {
-		tradeTransaction.CreditedAmount += r.CreditedAmount
+		tradeTransaction.InCash += r.InCash
 		tradeTransaction.PredictionID = r.PredictionID
 		tradeTransaction.UserId = r.UserId
-		tradeTransaction.DebitedAmount += r.DebitedAmount
+		tradeTransaction.InWinning += r.InWinning
 		tradeTransaction.SportType = r.SportType
 		tradeTransaction.MatchId = r.MatchId
 		tradeTransaction.PredictionType = r.PredictionType
+		tradeTransaction.Type = "cancel_all_tarde"
 	}
-
-	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction, "before")
+	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction)
 	for t := range updateTradeJoinedCh {
 		updateTradeJoined = append(updateTradeJoined, t)
 	}
@@ -121,7 +121,10 @@ func CancelAllUnMatchedTrade(data common.CancelAllUnMatchedBody) (error, common.
 			return err, common.Response{}
 		}
 	}
-	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction, "after")
+	tradeTransaction.InCash = 0
+	tradeTransaction.InWinning = 0
+
+	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction)
 	response := common.Response{
 		Status:  true,
 		Message: "All unmatched slots are successfully cancelled",
@@ -172,6 +175,7 @@ func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitG
 						"refund_amount":         totalRefund,
 						"cancelled_slot_number": unMatchedSlots,
 						"refund_cash_amount":    refundCash,
+						"refund_win_amount":     refundWin,
 					}
 					// update := bson.M{
 					// 	"$set": fields,
@@ -204,8 +208,8 @@ func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitG
 					})
 					userRefund <- common.TradeTransaction{
 						UserId:         data.UserID,
-						CreditedAmount: refundCash + refundWin,
-						DebitedAmount:  0,
+						InWinning:      refundWin,
+						InCash:         refundCash,
 						CashBalance:    0,
 						WinningBalance: 0,
 						PredictionType: "tarde",

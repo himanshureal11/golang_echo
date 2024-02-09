@@ -26,12 +26,15 @@ func SaleTrade(data common.RequestSaleBody) (error, common.Response) {
 	}
 	preKey := common.GetPredictionKey(common.TRADE_CONSTANT.MATCH_TRADE_PREDICTION, data.MatchID, data.Sport, data.PredictionID)
 	preKeyResult, err := configs.GetHashKeyValues(preKey)
-
 	if err != nil {
 		return err, response
 	}
 	if len(preKeyResult) > 0 {
 		if _, ok := preKeyResult["_id"]; ok {
+			if preKeyResult["status"] != "1" || preKeyResult["is_pred_cancel"] == "1" || preKeyResult["win_distribute"] == "true" {
+				response.Message = "Prediction no longer exist"
+				return err, response
+			}
 			putOnSaleKey := fmt.Sprintf("%s%d:%s:%s:%d:%.1f", common.TRADE_CONSTANT.PREDICTION_TRADE_PREDEFINED_RATE, data.MatchID, data.PredictionID, data.RecordID, data.OptionID, data.SaleFee)
 			joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
 			joinSaleTradeKey := fmt.Sprintf("%s%s", common.SLOTS_ON_SALE, data.RecordID)
@@ -84,7 +87,6 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 	}
 	joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
 	res, err := configs.GetHashKeyValues(joinPredKey)
-	fmt.Println(">>>>res", res)
 	if err != nil {
 		return err, response
 	}

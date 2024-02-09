@@ -54,10 +54,11 @@ type TradeTransaction struct {
 	MatchId        int                `bson:"match_id" json:"match_id"`
 	SportType      int                `bson:"sport_type" json:"sport_type"`
 	PredictionType string             `bson:"prediction_type" json:"prediction_type"`
+	Type           string             `bson:"type" json:"type"`
 	CashBalance    float64            `bson:"cash_balance" json:"cash_balance"`
 	WinningBalance float64            `bson:"winning_balance" json:"winning_balance"`
-	DebitedAmount  float64            `bson:"debited_amount" json:"debited_amount"`
-	CreditedAmount float64            `bson:"credited_amount" json:"credited_amount"`
+	InWinning      float64            `bson:"in_winning" json:"in_winning"`
+	InCash         float64            `bson:"in_cash" json:"in_cash"`
 	PredictionID   primitive.ObjectID `bson:"prediction_id" json:"prediction_id"`
 	UserId         primitive.ObjectID `bson:"user_id" json:"user_id"`
 	CreatedAt      time.Time          `bson:"createdAt" json:"createdAt"`
