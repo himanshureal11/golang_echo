@@ -85,6 +85,15 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 		Message: "No Prediction Found",
 		Data:    []string{},
 	}
+	preKey := common.GetPredictionKey(common.TRADE_CONSTANT.MATCH_TRADE_PREDICTION, data.MatchID, data.Sport, data.PredictionID)
+	preKeyResult, err := configs.GetHashKeyValues(preKey)
+	if err != nil {
+		return err, response
+	}
+	if preKeyResult["status"] != "1" || preKeyResult["is_pred_cancel"] == "1" || preKeyResult["win_distribute"] == "true" {
+		response.Message = "Prediction no longer exist"
+		return err, response
+	}
 	joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
 	res, err := configs.GetHashKeyValues(joinPredKey)
 	if err != nil {
