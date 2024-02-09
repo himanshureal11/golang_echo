@@ -84,6 +84,7 @@ func CancelSale(data common.CancelSaleRequestData) (error, common.Response) {
 	}
 	joinPredKey := common.GetJoinedTradeKey(common.TRADE_CONSTANT.JOINED_PREDICTION_TRADE, data.MatchID, data.Sport, data.PredictionID, data.UserID, data.RecordID)
 	res, err := configs.GetHashKeyValues(joinPredKey)
+	fmt.Println(">>>>res", res)
 	if err != nil {
 		return err, response
 	}
