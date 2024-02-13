@@ -157,6 +157,8 @@ func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitG
 
 			refundCash := cashRatio * float64(unMatchedSlots)
 			refundWin := winningRatio * float64(unMatchedSlots)
+			refundCash = refundAmount * (cashRatio / (cashRatio + winningRatio))
+			refundWin = refundAmount - refundCash
 			if refundAmount > 0 && unMatchedSlots > 0 && isSlotCancel == 0 {
 				preRefund, _ := strconv.ParseFloat(recordKeyData["refund_amount"], 64)
 				totalRefund := preRefund + refundAmount
