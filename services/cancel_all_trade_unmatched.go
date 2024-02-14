@@ -101,7 +101,7 @@ func CancelAllUnMatchedTrade(data common.CancelAllUnMatchedBody) (error, common.
 		tradeTransaction.SportType = r.SportType
 		tradeTransaction.MatchId = r.MatchId
 		tradeTransaction.PredictionType = r.PredictionType
-		tradeTransaction.Type = "cancel_all_tarde"
+		tradeTransaction.Type = "cancel_all_trade"
 	}
 	helper.CreateTradeTransaction(tradeTransaction.UserId, tradeTransaction)
 	for t := range updateTradeJoinedCh {
@@ -214,7 +214,7 @@ func cancelAllSlotsForTheSinglePrediction(data UserProjectedData, wg *sync.WaitG
 						InCash:         refundCash,
 						CashBalance:    0,
 						WinningBalance: 0,
-						PredictionType: "tarde",
+						PredictionType: "trading",
 						MatchId:        data.MatchID,
 						SportType:      data.Sport,
 						PredictionID:   data.PredictionID,
